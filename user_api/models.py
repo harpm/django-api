@@ -1,3 +1,4 @@
+from sqlite3 import dbapi2
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
@@ -17,6 +18,18 @@ class UserProfileManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
 
+        return user
+
+    def create_superuser(self, email, name, password):
+        """Create a new super user Profile model"""
+        user = self.model(email=email, name=name, password=password)
+
+        user.is_superuser = True
+        user.save(using=self._db)
+
+        return user
+
+
 
 # Create your models here.
 class UserProfile(AbstractBaseUser, PermissionsMixin):
@@ -26,10 +39,16 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
 
+    object = UserProfileManager()
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']
 
-    def get_name(self) -> str:
+    def get_short_name(self) -> str:
+        """Returns the name of the user"""
+        return self.name
+
+    def get_full_name(self) -> str:
         """Returns the name of the user"""
         return self.name
 
