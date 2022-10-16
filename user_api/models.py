@@ -1,57 +1,72 @@
-from sqlite3 import dbapi2
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser
-from django.contrib.auth.models import PermissionsMixin
-from django.contrib.auth.models import BaseUserManager
+from django.contrib.auth.models import (
+    BaseUserManager, AbstractBaseUser
+)
 
-# Manager for user profile
-class UserProfileManager(BaseUserManager):
-    """The manager for the User Profile model"""
 
-    def create_user(self, email, name, password=None):
-        """Create a new user in database"""
+class MyUserManager(BaseUserManager):
+    def create_user(self, email, date_of_birth, password=None):
+        """
+        Creates and saves a User with the given email, date of
+        birth and password.
+        """
         if not email:
-            raise ValueError("The user must have an email.")
+            raise ValueError('Users must have an email address')
 
-        email = self.normalize_email(email=email)
-        user = self.model(email=email, name=name)
+        user = self.model(
+            email=self.normalize_email(email),
+            date_of_birth=date_of_birth,
+        )
+
         user.set_password(password)
         user.save(using=self._db)
-
         return user
 
-    def create_superuser(self, email, name, password):
-        """Create a new super user Profile model"""
-        user = self.model(email=email, name=name, password=password)
-
-        user.is_superuser = True
+    def create_superuser(self, email, date_of_birth, password=None):
+        """
+        Creates and saves a superuser with the given email, date of
+        birth and password.
+        """
+        user = self.create_user(
+            email,
+            password=password,
+            date_of_birth=date_of_birth,
+        )
+        user.is_admin = True
         user.save(using=self._db)
-
         return user
 
 
-
-# Create your models here.
-class UserProfile(AbstractBaseUser, PermissionsMixin):
-    """User Profile database model"""
-    email = models.EmailField(max_length=255, unique=True)
-    name = models.CharField(max_length=255)
+class MyUser(AbstractBaseUser):
+    email = models.EmailField(
+        verbose_name='email address',
+        max_length=255,
+        unique=True,
+    )
+    date_of_birth = models.DateField()
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
 
-    object = UserProfileManager()
+    objects = MyUserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name']
+    REQUIRED_FIELDS = ['date_of_birth']
 
-    def get_short_name(self) -> str:
-        """Returns the name of the user"""
-        return self.name
+    def __str__(self):
+        return self.email
 
-    def get_full_name(self) -> str:
-        """Returns the name of the user"""
-        return self.name
+    def has_perm(self, perm, obj=None):
+        "Does the user have a specific permission?"
+        # Simplest possible answer: Yes, always
+        return True
 
-    def __str__(self) -> str:
-        """Returns the str form of the profile"""
-        return "Name:\t{0}\nUsername:\t{1}\nIs admin:\t{2}\n".format(self.name, self.email, self.is_admin)
+    def has_module_perms(self, app_label):
+        "Does the user have permissions to view the app `app_label`?"
+        # Simplest possible answer: Yes, always
+        return True
+
+    @property
+    def is_staff(self):
+        "Is the user a member of staff?"
+        # Simplest possible answer: All admins are staff
+        return self.is_admin
