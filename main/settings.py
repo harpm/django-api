@@ -122,7 +122,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-AUTH_USER_MODEL = 'user_api.MyUser'
+AUTH_USER_MODEL = 'user_api.UserProfile'
 
 AUTHENTICATION_BACKENDS = (
         'django.contrib.auth.backends.RemoteUserBackend',
